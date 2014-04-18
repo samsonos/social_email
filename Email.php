@@ -28,52 +28,96 @@ class Email extends Core
     /** External callable register success handler */
     public $registerHandler;
 
+    /** External callable confirm success handler */
+    public $confirmHandler;
+
     /** Module preparation */
     public function prepare()
     {
         // Create and check general database table fields configuration
-        db()->createField($this, $this->dbTable, 'dbConfirmField', 'VARCHAR(64)');
-        db()->createField($this, $this->dbTable, 'dbHashEmailField', 'VARCHAR(64)');
-        db()->createField($this, $this->dbTable, 'dbHashPasswordField', 'VARCHAR(64)');
+        db()->createField($this, $this->dbTable, 'dbConfirmField', 'VARCHAR('.self::$hashLength.')');
+        db()->createField($this, $this->dbTable, 'dbHashEmailField', 'VARCHAR('.self::$hashLength.')');
+        db()->createField($this, $this->dbTable, 'dbHashPasswordField', 'VARCHAR('.self::$hashLength.')');
 
         return parent::prepare();
     }
 
-    public function authorize()
+    /**
+     * Register new user
+     *
+     * @param string $email          User email address
+     * @param string $hashedPassword User hashed password string
+     * @param mixed  $user           Variable to return created user object
+     *
+     * @return int EmailStatus value
+     */
+    public function register($email, $hashedPassword, & $user = null)
     {
+        // Check if this email is not already registered
+        if(!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
 
-    }
+            // Create empty db record instance
+            $user = new $this->dbTable(false);
+            $user[$this->dbEmailField]          = $email;
+            $user[$this->dbHashEmailField]      = $this->hash($email);
+            $user[$this->dbHashPasswordField]   = $hashedPassword;
+            $user[$this->dbEmailField]          = $email;
+            $user[$this->dbConfirmField]        = $this->hash($email.time());
+            $user->save();
 
-    public function deauthorize()
-    {
+            // Call external register handler if present
+            if (is_callable($this->registerHandler)) {
+                // Call external handler - if it fails - return false
+                if (!call_user_func_array($this->registerHandler, array(&$user))) {
+                   return EmailStatus::ERROR_EMAIL_REGISTER_HANDLER;
+                }
+            }
 
-    }
+            // Everything is OK
+            return EmailStatus::SUCCESS_EMAIL_REGISTERED;
 
-    public function register($email, $hashedPassword)
-    {
-        // Create empty db record instance
-        $user = new $this->dbTable(false);
-        $user[$this->dbEmailField]          = $email;
-        $user[$this->dbHashEmailField]      = hash('sha256', $email);
-        $user[$this->dbHashPasswordField]   = $hashedPassword;
-        $user[$this->dbEmailField]          = $email;
-        $user[$this->dbConfirmField]        = hash('sha256', $email.time());
-        $user->save();
-
-        // Call external register handler if present
-        if (is_callable($this->registerHandler)) {
-            call_user_func_array($this->registerHandler, array(&$user));
+        } else {
+            return EmailStatus::ERROR_EMAIL_REGISTER_FOUND;
         }
     }
 
-    public function generatePassword()
+    /**
+     * Generic email confirmation handler
+     * @param string $hashedEmail   Hashed user email
+     * @param string $hashedCode    Hashed user email confirmation code
+     * @param mixed $user           Variable to return created user object
+     *
+     * @return int EmailStatus value
+     */
+    public function confirm($hashedEmail, $hashedCode, & $user = null)
     {
+        // Find user record by hashed email
+        if(dbQuery($this->dbTable)->cond($this->dbEmailField, $hashedEmail)->first($user)) {
 
-    }
+            // If this email is confirmed
+            if($user[$this->dbConfirmField] == 1) {
+                return EmailStatus::SUCCESS_EMAIL_CONFIRMED_ALREADY;
+            } else if ($user[$this->dbConfirmField] === $hashedCode) {
+                // If user confirmation codes matches
 
-    public function confirmEmail()
-    {
+                // Set db data that this email is confirmed
+                $user[$this->dbConfirmField] = 1;
+                $user->save();
 
+                // Call external confirm handler if present
+                if (is_callable($this->confirmHandler)) {
+                    // Call external handler - if it fails - return false
+                    if (!call_user_func_array($this->confirmHandler, array(&$user))) {
+                        return EmailStatus::ERROR_EMAIL_CONFIRM_HANDLER;
+                    }
+                }
+
+                // Everything is OK
+                return EmailStatus::SUCCESS_EMAIL_CONFIRMED;
+            }
+        } else {
+            return EmailStatus::ERROR_EMAIL_CONFIRM_NOTFOUND;
+        }
     }
 }
  
