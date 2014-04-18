@@ -227,7 +227,7 @@ class Email extends Core
         // If we have all data needed
         if (isset($_POST[$this->dbHashPasswordField]) && isset($_POST[$this->dbEmailField])) {
 
-            // Perform generic registration
+            /**@var EmailStatus $registerResult Perform generic registration*/
             $registerResult = $this->register($_POST[$this->dbEmailField], $_POST[$this->dbHashPasswordField]);
 
             // Check if it was successfull
@@ -238,6 +238,8 @@ class Email extends Core
             // Save email register status
             $result[self::RESPONSE_STATUS_TEXTFIELD] = $registerResult->text;
             $result[self::RESPONSE_STATUS_FIELD] = $registerResult->code;
+            $result = array_merge($registerResult->response);
+
         }
 
         return $result;

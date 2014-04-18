@@ -44,7 +44,7 @@ class EmailStatus
     public $text;
 
     /** External repsonse */
-    public $response;
+    public $response = array();
 
     /**
      * Create status object
