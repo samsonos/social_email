@@ -28,7 +28,10 @@ class Email extends Core
     /** External callable register success handler */
     public $registerHandler;
 
-    /** External callable confirm success handler */
+    /**
+     * External callable confirm success handler
+     * @var callback
+     */
     public $confirmHandler;
 
     /** Module preparation */
@@ -57,6 +60,7 @@ class Email extends Core
         if(!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
 
             // Create empty db record instance
+            /**@var $user \samson\activerecord\dbRecord */
             $user = new $this->dbTable(false);
             $user[$this->dbEmailField]          = $email;
             $user[$this->dbHashEmailField]      = $this->hash($email);
@@ -76,9 +80,9 @@ class Email extends Core
             // Everything is OK
             return EmailStatus::SUCCESS_EMAIL_REGISTERED;
 
-        } else {
-            return EmailStatus::ERROR_EMAIL_REGISTER_FOUND;
         }
+
+        return EmailStatus::ERROR_EMAIL_REGISTER_FOUND;
     }
 
     /**
@@ -115,9 +119,9 @@ class Email extends Core
                 // Everything is OK
                 return EmailStatus::SUCCESS_EMAIL_CONFIRMED;
             }
-        } else {
-            return EmailStatus::ERROR_EMAIL_CONFIRM_NOTFOUND;
         }
+
+        return EmailStatus::ERROR_EMAIL_CONFIRM_NOTFOUND;
     }
 }
  
