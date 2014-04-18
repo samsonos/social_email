@@ -36,5 +36,29 @@ class EmailStatus
     const ERROR_EMAIL_AUTHORIZE_WRONGPWD = 10006;
     /** Password is wrong */
     const ERROR_EMAIL_AUTHORIZE_HANDLER = 10007;
+
+    /**
+     * Convert status code to string
+     *
+     * @param int $status Email status code
+     * @return string Status string description
+     */
+    public static function toString($status)
+    {
+        switch ($status) {
+            case self::SUCCESS_EMAIL_REGISTERED: return ''; break;
+            case self::SUCCESS_EMAIL_CONFIRMED: return ''; break;
+            case self::SUCCESS_EMAIL_CONFIRMED_ALREADY: return ''; break;
+            case self::SUCCESS_EMAIL_AUTHORIZE: return ''; break;
+            case self::ERROR_EMAIL_REGISTER_FOUND: return ''; break;
+            case self::ERROR_EMAIL_REGISTER_HANDLER: return ''; break;
+            case self::ERROR_EMAIL_CONFIRM_NOTFOUND: return ''; break;
+            case self::ERROR_EMAIL_CONFIRM_HANDLER: return ''; break;
+            case self::ERROR_EMAIL_AUTHORIZE_NOTFOUND: return ''; break;
+            case self::ERROR_EMAIL_AUTHORIZE_WRONGPWD: return ''; break;
+            case self::ERROR_EMAIL_AUTHORIZE_HANDLER: return ''; break;
+            default: return 'Status not found';
+        }
+    }
 }
- 
+
