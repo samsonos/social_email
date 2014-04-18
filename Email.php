@@ -25,7 +25,10 @@ class Email extends Core
     /* Database user email field */
     public $dbConfirmField = 'email';
 
-    /** External callable register success handler */
+    /**
+     * External callable register success handler
+     * @var callback
+     */
     public $registerHandler;
 
     /**
@@ -33,6 +36,12 @@ class Email extends Core
      * @var callback
      */
     public $confirmHandler;
+
+    /**
+     * External callable authorize success handler
+     * @var callback
+     */
+    public $authorizeHandler;
 
     /** Module preparation */
     public function prepare()
@@ -43,6 +52,37 @@ class Email extends Core
         db()->createField($this, $this->dbTable, 'dbHashPasswordField', 'VARCHAR('.self::$hashLength.')');
 
         return parent::prepare();
+    }
+
+    /**
+     * Authorize user via email
+     * @param string $hashedEmail       Hashed user email
+     * @param string $hashedPassword    Hashed user password
+     * @param mixed  $user              Variable to return created user object
+     *
+     * @return int EmailStatus value
+     */
+    public function authorize($hashedEmail, $hashedPassword, & $user = null)
+    {
+        // Check if this email is registered
+        if (!dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
+            // Check if passwords match
+            if ($user[$this->dbHashPasswordField] === $hashedPassword) {
+                // Call external authorize handler if present
+                if (is_callable($this->authorizeHandler)) {
+                    // Call external handler - if it fails - return false
+                    if (!call_user_func_array($this->authorizeHandler, array(&$user))) {
+                        return EmailStatus::ERROR_EMAIL_AUTHORIZE_HANDLER;
+                    }
+                }
+
+                return EmailStatus::SUCCESS_EMAIL_AUTHORIZE;
+            }
+
+            return EmailStatus::ERROR_EMAIL_AUTHORIZE_WRONGPWD;
+        }
+
+        return EmailStatus::ERROR_EMAIL_AUTHORIZE_NOTFOUND;
     }
 
     /**
@@ -57,7 +97,7 @@ class Email extends Core
     public function register($email, $hashedPassword, & $user = null)
     {
         // Check if this email is not already registered
-        if(!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
+        if (!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
 
             // Create empty db record instance
             /**@var $user \samson\activerecord\dbRecord */

@@ -19,6 +19,8 @@ class EmailStatus
     const SUCCESS_EMAIL_CONFIRMED = 20002;
     /** Email was successfully confirmed before */
     const SUCCESS_EMAIL_CONFIRMED_ALREADY = 20003;
+    /** User successfully authorized */
+    const SUCCESS_EMAIL_AUTHORIZE = 20004;
 
     /** Email is already registered */
     const ERROR_EMAIL_REGISTER_FOUND = 10001;
@@ -28,5 +30,11 @@ class EmailStatus
     const ERROR_EMAIL_CONFIRM_NOTFOUND = 10003;
     /** Email confirm external handler error */
     const ERROR_EMAIL_CONFIRM_HANDLER = 10004;
+    /** Email is not registered */
+    const ERROR_EMAIL_AUTHORIZE_NOTFOUND = 10005;
+    /** Password is wrong */
+    const ERROR_EMAIL_AUTHORIZE_WRONGPWD = 10006;
+    /** Password is wrong */
+    const ERROR_EMAIL_AUTHORIZE_HANDLER = 10007;
 }
  
