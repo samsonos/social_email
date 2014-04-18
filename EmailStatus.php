@@ -37,27 +37,37 @@ class EmailStatus
     /** Password is wrong */
     const ERROR_EMAIL_AUTHORIZE_HANDLER = 10007;
 
+    /** Status code */
+    public $code;
+
+    /** Status text description */
+    public $text;
+
+    /** External repsonse */
+    public $response;
+
     /**
-     * Convert status code to string
+     * Create status object
      *
      * @param int $status Email status code
-     * @return string Status string description
      */
-    public static function toString($status)
+    public function __construct($status)
     {
+        $this->code = $status;
+
         switch ($status) {
-            case self::SUCCESS_EMAIL_REGISTERED: return ''; break;
-            case self::SUCCESS_EMAIL_CONFIRMED: return ''; break;
-            case self::SUCCESS_EMAIL_CONFIRMED_ALREADY: return ''; break;
-            case self::SUCCESS_EMAIL_AUTHORIZE: return ''; break;
-            case self::ERROR_EMAIL_REGISTER_FOUND: return ''; break;
-            case self::ERROR_EMAIL_REGISTER_HANDLER: return ''; break;
-            case self::ERROR_EMAIL_CONFIRM_NOTFOUND: return ''; break;
-            case self::ERROR_EMAIL_CONFIRM_HANDLER: return ''; break;
-            case self::ERROR_EMAIL_AUTHORIZE_NOTFOUND: return ''; break;
-            case self::ERROR_EMAIL_AUTHORIZE_WRONGPWD: return ''; break;
-            case self::ERROR_EMAIL_AUTHORIZE_HANDLER: return ''; break;
-            default: return 'Status not found';
+            case self::SUCCESS_EMAIL_REGISTERED: $this->text = 'Email has been successfully registered'; break;
+            case self::SUCCESS_EMAIL_CONFIRMED: $this->text = 'Email has been successfully confirmed'; break;
+            case self::SUCCESS_EMAIL_CONFIRMED_ALREADY: $this->text = 'Email has already been confirmed before'; break;
+            case self::SUCCESS_EMAIL_AUTHORIZE: $this->text = 'User successfully authorized'; break;
+            case self::ERROR_EMAIL_REGISTER_FOUND: $this->text = 'Email is already registered'; break;
+            case self::ERROR_EMAIL_REGISTER_HANDLER: $this->text = 'Email register external handler failure'; break;
+            case self::ERROR_EMAIL_CONFIRM_NOTFOUND: $this->text = 'Email address for confirmation not found'; break;
+            case self::ERROR_EMAIL_CONFIRM_HANDLER: $this->text = 'Email confirmation external handler failure'; break;
+            case self::ERROR_EMAIL_AUTHORIZE_NOTFOUND: $this->text = 'User email for authorization not found'; break;
+            case self::ERROR_EMAIL_AUTHORIZE_WRONGPWD: $this->text = 'User password for authorization not found'; break;
+            case self::ERROR_EMAIL_AUTHORIZE_HANDLER: $this->text = 'User authorization external handler failure'; break;
+            default: $this->text = 'Status not found';
         }
     }
 }

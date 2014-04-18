@@ -13,6 +13,10 @@ namespace samson\social;
  */
 class Email extends Core
 {
+    const RESPONSE_ERROR_FIELD = 'email_error';
+    const RESPONSE_STATUS_FIELD = 'email_status';
+    const RESPONSE_STATUS_TEXTFIELD = 'email_status_text';
+
     /* Module identifier */
     public $id = 'socialemail';
 
@@ -103,14 +107,18 @@ class Email extends Core
     public function register($email, $hashedPassword = null, & $user = null, $valid = false)
     {
         // Status code
-        $status = false;
+        $result = new EmailStatus(0);
 
         // Check if this email is not already registered
         if (!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
-
-            // Create empty db record instance
             /**@var $user \samson\activerecord\dbRecord */
-            $user = new $this->dbTable(false);
+
+            // If user object is NOT passed
+            if (!isset($user) ) {
+                // Create empty db record instance
+                $user = new $this->dbTable(false);
+            }
+
             $user[$this->dbEmailField]          = $email;
             $user[$this->dbHashEmailField]      = $this->hash($email);
 
@@ -132,21 +140,21 @@ class Email extends Core
             $user->save();
 
             // Everything is OK
-            $status = EmailStatus::SUCCESS_EMAIL_REGISTERED;
+            $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_REGISTERED);
 
         } else { // Email not found
-            $status =  EmailStatus::ERROR_EMAIL_REGISTER_FOUND;
+            $result = new EmailStatus(EmailStatus::ERROR_EMAIL_REGISTER_FOUND);
         }
 
         // Call external register handler if present
         if (is_callable($this->registerHandler)) {
             // Call external handler - if it fails - return false
-            if (!call_user_func_array($this->registerHandler, array(&$user, $status))) {
-                $status = EmailStatus::ERROR_EMAIL_REGISTER_HANDLER;
+            if (!call_user_func_array($this->registerHandler, array(&$user, &$result))) {
+                $result = new EmailStatus(EmailStatus::ERROR_EMAIL_REGISTER_HANDLER);
             }
         }
 
-        return $status;
+        return $result;
     }
 
     /**
@@ -206,22 +214,30 @@ class Email extends Core
 
         // Check if email field is passed
         if (!isset($_POST[$this->dbEmailField])) {
-            $result['email_error'] = "\n".'['.$this->dbEmailField.'] field is not passed';
+            $result[self::RESPONSE_ERROR_FIELD] = "\n".'['.$this->dbEmailField.'] field is not passed';
         }
 
         // Check if hashed password field is passed
         if (!isset($_POST[$this->dbHashPasswordField])) {
-            $result['email_error'] = "\n".'['.$this->dbHashPasswordField.'] field is not passed';
+            $result[self::RESPONSE_ERROR_FIELD] = "\n".'['.$this->dbHashPasswordField.'] field is not passed';
+        } else { // Rehash password
+            $_POST[$this->dbHashPasswordField] = $this->hash($_POST[$this->dbHashPasswordField]);
         }
 
         // If we have all data needed
         if (isset($_POST[$this->dbHashPasswordField]) && isset($_POST[$this->dbEmailField])) {
-            if (($status = $this->register($_POST[$this->dbEmailField], $_POST[$this->dbHashPasswordField])) == EmailStatus::SUCCESS_EMAIL_REGISTERED) {
+
+            // Perform generic registration
+            $registerResult = $this->register($_POST[$this->dbEmailField], $_POST[$this->dbHashPasswordField]);
+
+            // Check if it was successfull
+            if ( $registerResult->code == EmailStatus::SUCCESS_EMAIL_REGISTERED) {
                 $result['status'] = '1';
             }
 
             // Save email register status
-            $result['email_status'] = EmailStatus::toString($status);
+            $result[self::RESPONSE_STATUS_TEXTFIELD] = $registerResult->text;
+            $result[self::RESPONSE_STATUS_FIELD] = $registerResult->code;
         }
 
         return $result;
