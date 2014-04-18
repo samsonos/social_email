@@ -69,29 +69,33 @@ class Email extends Core
     public function authorize($hashedEmail, $hashedPassword, & $user = null)
     {
         // Status code
-        $status = false;
+        $result = new EmailStatus(0);
 
         // Check if this email is registered
-        if (!dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
+        if (dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
             // Check if passwords match
             if ($user[$this->dbHashPasswordField] === $hashedPassword) {
-                $status = EmailStatus::SUCCESS_EMAIL_AUTHORIZE;
+                $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
+
+                // Login with current user
+                auth()->authorize($user);
+
             } else { // Wrong password
-                $status = EmailStatus::ERROR_EMAIL_AUTHORIZE_WRONGPWD;
+                $result = new EmailStatus(EmailStatus::ERROR_EMAIL_AUTHORIZE_WRONGPWD);
             }
         } else { // Email not found
-            $status = EmailStatus::ERROR_EMAIL_AUTHORIZE_NOTFOUND;
+            $result = new EmailStatus(EmailStatus::ERROR_EMAIL_AUTHORIZE_NOTFOUND);
         }
 
         // Call external authorize handler if present
         if (is_callable($this->authorizeHandler)) {
             // Call external handler - if it fails - return false
-            if (!call_user_func_array($this->authorizeHandler, array(&$user))) {
-                $status = EmailStatus::ERROR_EMAIL_AUTHORIZE_HANDLER;
+            if (!call_user_func_array($this->authorizeHandler, array(&$user, &$result))) {
+                $result = new EmailStatus(EmailStatus::ERROR_EMAIL_AUTHORIZE_HANDLER);
             }
         }
 
-        return $status;
+        return $result;
     }
 
     /**
@@ -231,7 +235,7 @@ class Email extends Core
             $registerResult = $this->register($_POST[$this->dbEmailField], $_POST[$this->dbHashPasswordField]);
 
             // Check if it was successfull
-            if ( $registerResult->code == EmailStatus::SUCCESS_EMAIL_REGISTERED) {
+            if ($registerResult->code == EmailStatus::SUCCESS_EMAIL_REGISTERED) {
                 $result['status'] = '1';
             }
 
@@ -258,35 +262,44 @@ class Email extends Core
 
         // Get hashed email field by all possible methods
         if (!isset($hashEmail)) {
-            if (isset($_POST) && isset($_POST['hashEmail'])) {
-                $hashEmail = $_POST['hashEmail'];
-            } else if (isset($_GET) && isset($_GET['hashEmail'])) {
-                $hashEmail = $_GET['hashEmail'];
+            if (isset($_POST) && isset($_POST[$this->dbHashEmailField])) {
+                $hashEmail = $_POST[$this->dbHashEmailField];
+            } else if (isset($_GET) && isset($_GET[$this->dbHashEmailField])) {
+                $hashEmail = $_GET[$this->dbHashEmailField];
             } else {
-                $result['email_error'] = "\n".'[hashEmail] field is not passed';
+                $result['email_error'] = "\n".'['.$this->dbHashEmailField.'] field is not passed';
             }
         }
 
         // Get hashed password field by all possible methods
         if (!isset($hashPassword)) {
-            if (isset($_POST) && isset($_POST['hashPassword'])) {
-                $hashPassword = $_POST['hashPassword'];
-            } else if (isset($_GET) && isset($_GET['hashPassword'])) {
-                $hashPassword = $_GET['hashPassword'];
+            if (isset($_POST) && isset($_POST[$this->dbHashPasswordField])) {
+                $hashPassword = $_POST[$this->dbHashPasswordField];
+            } else if (isset($_GET) && isset($_GET[$this->dbHashPasswordField])) {
+                $hashPassword = $_GET[$this->dbHashPasswordField];
             } else {
-                $result['email_error'] = "\n".'[hashPassword] field is not passed';
+                $result['email_error'] = "\n".'['.$this->dbHashPasswordField.'] field is not passed';
             }
         }
 
         // If we have authorization data
         if(isset($hashEmail) && isset($hashPassword)) {
-            // Try to authorize
-            if (($status = $this->authorize($hashEmail, $hashPassword, $user)) === EmailStatus::SUCCESS_EMAIL_AUTHORIZE) {
+
+            $hashEmail = $this->hash($hashEmail);
+            $hashPassword = $this->hash($hashPassword);
+
+            /**@var EmailStatus $authorizeResult Perform generic registration*/
+            $authorizeResult = $this->authorize($hashEmail, $hashPassword);
+
+            // Check if it was successfull
+            if ($authorizeResult->code == EmailStatus::SUCCESS_EMAIL_AUTHORIZE) {
                 $result['status'] = '1';
             }
 
-            // Save email authorize status
-            $result['email_status'] = EmailStatus::toString($status);
+            // Save email register status
+            $result[self::RESPONSE_STATUS_TEXTFIELD] = $authorizeResult->text;
+            $result[self::RESPONSE_STATUS_FIELD] = $authorizeResult->code;
+            $result = array_merge($result, $authorizeResult->response);
         }
 
         return $result;
