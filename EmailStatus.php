@@ -43,7 +43,7 @@ class EmailStatus
     /** Status text description */
     public $text;
 
-    /** External repsonse */
+    /** External response */
     public $response = array();
 
     /**

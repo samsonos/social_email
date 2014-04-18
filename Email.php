@@ -238,8 +238,7 @@ class Email extends Core
             // Save email register status
             $result[self::RESPONSE_STATUS_TEXTFIELD] = $registerResult->text;
             $result[self::RESPONSE_STATUS_FIELD] = $registerResult->code;
-            $result = array_merge($registerResult->response);
-
+            $result = array_merge($result, $registerResult->response);
         }
 
         return $result;
