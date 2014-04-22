@@ -41,12 +41,6 @@ class Email extends Core
      */
     public $confirmHandler;
 
-    /**
-     * External callable authorize handler
-     * @var callback
-     */
-    public $authorizeHandler;
-
     /** Module preparation */
     public function prepare()
     {
@@ -58,6 +52,23 @@ class Email extends Core
         return parent::prepare();
     }
 
+    /** User authorization handler */
+    public function authorize(\samson\activerecord\dbRecord & $user, $remember = false)
+    {
+        // Call default authorize behaviour
+        if(parent::authorize($user, $remember)) {
+            // If remember flag is passed - save it
+            if ($remember) {
+                // Get site url base
+                $url_base = url()->base();
+
+                // Set cookies with auth data
+                setcookie( $url_base.'_cookie_md5Email', $user[$this->dbHashEmailField], time()+(24*3600),'/');
+                setcookie( $url_base.'_cookie_md5Password', $user[$this->dbHashPasswordField], time()+(24*3600),'/' );
+            }
+        }
+    }
+
     /**
      * Authorize user via email
      * @param string $hashedEmail       Hashed user email
@@ -66,7 +77,7 @@ class Email extends Core
      *
      * @return int EmailStatus value
      */
-    public function authorize($hashedEmail, $hashedPassword, & $user = null)
+    public function authorizeWithEmail($hashedEmail, $hashedPassword, & $user = null)
     {
         // Status code
         $result = new EmailStatus(0);
@@ -78,7 +89,7 @@ class Email extends Core
                 $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
 
                 // Login with current user
-                auth()->authorize($user);
+                $this->authorize($user);
 
             } else { // Wrong password
                 $result = new EmailStatus(EmailStatus::ERROR_EMAIL_AUTHORIZE_WRONGPWD);
@@ -142,6 +153,9 @@ class Email extends Core
 
             // Save object to database
             $user->save();
+
+            // Class default authorization
+            $this->authorize($user);
 
             // Everything is OK
             $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_REGISTERED);
@@ -289,7 +303,7 @@ class Email extends Core
             $hashPassword = $this->hash($hashPassword);
 
             /**@var EmailStatus $authorizeResult Perform generic registration*/
-            $authorizeResult = $this->authorize($hashEmail, $hashPassword);
+            $authorizeResult = $this->authorizeWithEmail($hashEmail, $hashPassword);
 
             // Check if it was successfull
             if ($authorizeResult->code == EmailStatus::SUCCESS_EMAIL_AUTHORIZE) {
