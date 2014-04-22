@@ -30,6 +30,12 @@ class Email extends Core
     public $dbConfirmField = 'hash_confirm';
 
     /**
+     * External callable authorize handler
+     * @var callback
+     */
+    public $authorizeHandler;
+
+    /**
      * External callable register handler
      * @var callback
      */
