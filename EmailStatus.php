@@ -3,7 +3,7 @@
  * Created by Vitaly Iegorov <egorov@samsonos.com>
  * on 18.04.14 at 14:59
  */
- namespace samson\social;
+ namespace samson\social\email;
 
 /**
  * Class that describes all email statuses

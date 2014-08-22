@@ -3,7 +3,7 @@
  * Created by Vitaly Iegorov <egorov@samsonos.com>
  * on 18.04.14 at 14:06
  */
-namespace samson\social;
+namespace samson\social\email;
 
 /**
  * Generic class for user registration and authorization via Email
@@ -11,7 +11,7 @@ namespace samson\social;
  * @copyright 2014 SamsonOS
  * @version 0.0.2
  */
-class Email extends Core
+class Email extends \samson\social\Core
 {
     const RESPONSE_ERROR_FIELD = 'email_error';
     const RESPONSE_STATUS_FIELD = 'email_status';
