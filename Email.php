@@ -195,7 +195,7 @@ class Email extends \samson\social\Core
         $status = false;
 
         // Find user record by hashed email
-        if(dbQuery($this->dbTable)->cond($this->dbEmailField, $hashedEmail)->first($user)) {
+        if(dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
 
             // If this email is confirmed
             if($user[$this->dbConfirmField] == 1) {
