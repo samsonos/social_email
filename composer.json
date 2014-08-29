@@ -7,5 +7,8 @@
         "samsonos/php_auth":"*"
     },
 	"license":"Open Software License (OSL) v 3.0",
-	"homepage":"http://samsonos.com/"
+	"homepage":"http://samsonos.com/",
+    "autoload": {
+        "classmap": ["/"]
+    }
 }
