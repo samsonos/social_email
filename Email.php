@@ -26,8 +26,11 @@ class Email extends \samson\social\Core
     /** Database hashed password column name */
     public $dbHashPasswordField = 'hash_password';
 
-    /* Database user email field */
+    /** Database user email field */
     public $dbConfirmField = 'hash_confirm';
+
+    /** Cookie existence time */
+    public $cookieTime = 30;
 
     /**
      * External callable authorize handler
@@ -62,15 +65,13 @@ class Email extends \samson\social\Core
     public function authorize(\samson\activerecord\dbRecord & $user, $remember = false)
     {
         // Call default authorize behaviour
-        if(parent::authorize($user, $remember)) {
+        if (parent::authorize($user, $remember)) {
             // If remember flag is passed - save it
             if ($remember) {
-                // Get site url base
-                $url_base = url()->base();
 
                 // Set cookies with auth data
-                setcookie( $url_base.'_cookie_md5Email', $user[$this->dbHashEmailField], time()+(24*3600),'/');
-                setcookie( $url_base.'_cookie_md5Password', $user[$this->dbHashPasswordField], time()+(24*3600),'/' );
+                setcookie('_cookie_md5Email', $user[$this->dbHashEmailField], time()+($this->cookieTime));
+                setcookie('_cookie_md5Password', $user[$this->dbHashPasswordField], time()+($this->cookieTime));
             }
         }
     }
@@ -79,11 +80,12 @@ class Email extends \samson\social\Core
      * Authorize user via email
      * @param string $hashedEmail       Hashed user email
      * @param string $hashedPassword    Hashed user password
+     * @param boolean $remember         Remember checkbox
      * @param mixed  $user              Variable to return created user object
      *
      * @return int EmailStatus value
      */
-    public function authorizeWithEmail($hashedEmail, $hashedPassword, & $user = null)
+    public function authorizeWithEmail($hashedEmail, $hashedPassword, $remember = null, & $user = null)
     {
         // Status code
         $result = new EmailStatus(0);
@@ -95,7 +97,7 @@ class Email extends \samson\social\Core
                 $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
 
                 // Login with current user
-                $this->authorize($user);
+                $this->authorize($user, $remember);
 
             } else { // Wrong password
                 $result = new EmailStatus(EmailStatus::ERROR_EMAIL_AUTHORIZE_WRONGPWD);
@@ -135,7 +137,7 @@ class Email extends \samson\social\Core
             /**@var $user \samson\activerecord\dbRecord */
 
             // If user object is NOT passed
-            if (!isset($user) ) {
+            if (!isset($user)) {
                 // Create empty db record instance
                 $user = new $this->dbTable(false);
             }
@@ -195,12 +197,12 @@ class Email extends \samson\social\Core
         $status = false;
 
         // Find user record by hashed email
-        if(dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
+        if (dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
 
             // If this email is confirmed
-            if($user[$this->dbConfirmField] == 1) {
+            if ($user[$this->dbConfirmField] == 1) {
                 $status = EmailStatus::SUCCESS_EMAIL_CONFIRMED_ALREADY;
-            } else if ($user[$this->dbConfirmField] === $hashedCode) {
+            } elseif ($user[$this->dbConfirmField] === $hashedCode) {
                 // If user confirmation codes matches
 
                 // Set db data that this email is confirmed
@@ -284,7 +286,7 @@ class Email extends \samson\social\Core
         if (!isset($hashEmail)) {
             if (isset($_POST) && isset($_POST[$this->dbHashEmailField])) {
                 $hashEmail = $_POST[$this->dbHashEmailField];
-            } else if (isset($_GET) && isset($_GET[$this->dbHashEmailField])) {
+            } elseif (isset($_GET) && isset($_GET[$this->dbHashEmailField])) {
                 $hashEmail = $_GET[$this->dbHashEmailField];
             } else {
                 $result['email_error'] = "\n".'['.$this->dbHashEmailField.'] field is not passed';
@@ -295,7 +297,7 @@ class Email extends \samson\social\Core
         if (!isset($hashPassword)) {
             if (isset($_POST) && isset($_POST[$this->dbHashPasswordField])) {
                 $hashPassword = $_POST[$this->dbHashPasswordField];
-            } else if (isset($_GET) && isset($_GET[$this->dbHashPasswordField])) {
+            } elseif (isset($_GET) && isset($_GET[$this->dbHashPasswordField])) {
                 $hashPassword = $_GET[$this->dbHashPasswordField];
             } else {
                 $result['email_error'] = "\n".'['.$this->dbHashPasswordField.'] field is not passed';
@@ -303,7 +305,7 @@ class Email extends \samson\social\Core
         }
 
         // If we have authorization data
-        if(isset($hashEmail) && isset($hashPassword)) {
+        if (isset($hashEmail) && isset($hashPassword)) {
 
             $hashEmail = $this->hash($hashEmail);
             $hashPassword = $this->hash($hashPassword);
@@ -354,4 +356,3 @@ class Email extends \samson\social\Core
         }
     }
 }
- 
