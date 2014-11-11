@@ -5,6 +5,7 @@
  */
 namespace samson\social\email;
 
+
 /**
  * Generic class for user registration and authorization via Email
  * @author Vitaly Egorov <egorov@samsonos.com>
@@ -30,7 +31,7 @@ class Email extends \samson\social\Core
     public $dbConfirmField = 'hash_confirm';
 
     /** Cookie existence time */
-    public $cookieTime = 30;
+    public $cookieTime = 3600;
 
     /**
      * External callable authorize handler
@@ -123,6 +124,23 @@ class Email extends \samson\social\Core
             }
         }
 
+        return $result;
+    }
+
+    /**
+     * Cookie verification
+     *
+     * @return boolean Sign In status
+     */
+    public function cookieVerification()
+    {
+        $result = '';
+        if (!isset($_COOKIE['_cookie_md5Email']) && !isset($_COOKIE['_cookie_md5Password'])) {
+            $result = false;
+        } else {
+            $auth = $this->authorizeWithEmail($_COOKIE['_cookie_md5Email'], $_COOKIE['_cookie_md5Password']);
+            $result = ($auth->code == EmailStatus::SUCCESS_EMAIL_AUTHORIZE) ? true : false;
+        }
         return $result;
     }
 
@@ -239,7 +257,7 @@ class Email extends \samson\social\Core
     /** Initiate deauthorization process */
     public function deauthorize()
     {
-        // Unset cookies with auth data
+         //Unset cookies with auth data
         setcookie('_cookie_md5Email', "");
         setcookie('_cookie_md5Password', "");
 
