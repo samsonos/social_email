@@ -77,14 +77,6 @@ class Email extends \samson\social\Core
     }
 
     /**
-     * @return string Unique module state identifier
-     */
-    public function identifier()
-    {
-        return 'asd';
-    }
-
-    /**
      * Update authorization status of all social services
      * @param \samson\activerecord\dbRecord $user Pointer to authorized user database record
      */
