@@ -77,6 +77,23 @@ class Email extends \samson\social\Core
     }
 
     /**
+     * @return string Unique module state identifier
+     */
+    public function identifier()
+    {
+        return 'asd';
+    }
+
+    /**
+     * Update authorization status of all social services
+     * @param \samson\activerecord\dbRecord $user Pointer to authorized user database record
+     */
+    public function update(\samson\activerecord\dbRecord & $user)
+    {
+        parent::update($user);
+    }
+
+    /**
      * Authorize user via email
      * @param string $hashedEmail       Hashed user email
      * @param string $hashedPassword    Hashed user password
@@ -225,6 +242,16 @@ class Email extends \samson\social\Core
         }
 
         return $status;
+    }
+
+    /** Initiate deauthorization process */
+    public function deauthorize()
+    {
+        // Unset cookies with auth data
+        setcookie('_cookie_md5Email', "");
+        setcookie('_cookie_md5Password', "");
+
+        parent::deauthorize();
     }
 
     /**
