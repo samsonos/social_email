@@ -30,6 +30,9 @@ class Email extends \samson\social\Core
     /** Database user email field */
     public $dbConfirmField = 'hash_confirm';
 
+    /** Database user token field */
+    public $dbAccessToken = 'accessToken';
+
     /** Cookie existence time */
     public $cookieTime = 3600;
 
@@ -69,10 +72,15 @@ class Email extends \samson\social\Core
         if (parent::authorize($user, $remember)) {
             // If remember flag is passed - save it
             if ($remember) {
-
-                // Set cookies with auth data
-                setcookie('_cookie_md5Email', $user[$this->dbHashEmailField], time()+($this->cookieTime));
-                setcookie('_cookie_md5Password', $user[$this->dbHashPasswordField], time()+($this->cookieTime));
+                // Create token
+                $token = $user[$this->dbHashEmailField].(time()+($this->cookieTime)).$user[$this->dbHashPasswordField];
+                // Set db accessToken
+                $user[$this->dbAccessToken] = $token;
+                $user->save();
+                // Set cookies with token
+                $expiry = time()+($this->cookieTime);
+                $cookieData = array( "token" => $token, "expiry" => $expiry );
+                setcookie('_cookie_accessToken', serialize($cookieData), $expiry);
             }
         }
     }
@@ -135,11 +143,20 @@ class Email extends \samson\social\Core
     public function cookieVerification()
     {
         $result = '';
-        if (!isset($_COOKIE['_cookie_md5Email']) && !isset($_COOKIE['_cookie_md5Password'])) {
+        $user = null;
+        if (!isset($_COOKIE['_cookie_accessToken'])) {
             $result = false;
         } else {
-            $auth = $this->authorizeWithEmail($_COOKIE['_cookie_md5Email'], $_COOKIE['_cookie_md5Password']);
-            $result = ($auth->code == EmailStatus::SUCCESS_EMAIL_AUTHORIZE) ? true : false;
+            $cookieData = unserialize($_COOKIE['_cookie_accessToken']);
+            if (dbQuery($this->dbTable)->cond($this->dbAccessToken, $cookieData['token'])->first($user)) {
+                $md5_pass = $user[$this->dbHashPasswordField];
+                $md5_email = $user[$this->dbHashEmailField];
+                $auth = $this->authorizeWithEmail($md5_email, $md5_pass);
+                $result = ($auth->code == EmailStatus::SUCCESS_EMAIL_AUTHORIZE) ? true : false;
+            } else {
+                $result = false;
+            }
+
         }
         return $result;
     }
