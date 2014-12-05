@@ -31,7 +31,7 @@ class Email extends \samson\social\Core
     public $dbConfirmField = 'hash_confirm';
 
     /** Database user token field */
-    public $dbAccessToken = 'accessToken';
+    public $dbAccessToken = 'access_token';
 
     /** Cookie existence time */
     public $cookieTime = 3600;
