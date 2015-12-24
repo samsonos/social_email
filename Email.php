@@ -9,7 +9,8 @@ use samson\social\Core;
 use samsonframework\orm\RecordInterface;
 
 /**
- * Generic class for user registration and authorization via Email
+ * Generic class for user registration and authorization via Email.
+ *
  * @author Vitaly Egorov <egorov@samsonos.com>
  * @copyright 2014 SamsonOS
  * @version 0.0.2
@@ -88,22 +89,14 @@ class Email extends Core
     }
 
     /**
-     * Update authorization status of all social services
-     * @param RecordInterface $user Pointer to authorized user database record
-     */
-    public function update(RecordInterface &$user)
-    {
-        parent::update($user);
-    }
-
-    /**
-     * Authorize user via email
+     * Authorize user via email.
+     *
      * @param string $hashedEmail       Hashed user email
      * @param string $hashedPassword    Hashed user password
      * @param boolean $remember         Remember checkbox
      * @param mixed  $user              Variable to return created user object
      *
-     * @return int EmailStatus value
+     * @return EmailStatus Status object value
      */
     public function authorizeWithEmail($hashedEmail, $hashedPassword, $remember = null, & $user = null)
     {
@@ -111,7 +104,7 @@ class Email extends Core
         $result = new EmailStatus(0);
 
         // Check if this email is registered
-        if (dbQuery($this->dbTable)->cond($this->dbHashEmailField, $hashedEmail)->first($user)) {
+        if (dbQuery($this->dbTable)->where($this->dbHashEmailField, $hashedEmail)->first($user)) {
             // Check if passwords match
             if ($user[$this->dbHashPasswordField] === $hashedPassword) {
                 $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
