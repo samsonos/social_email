@@ -5,6 +5,8 @@
  */
 namespace samson\social\email;
 
+use samson\social\Core;
+use samsonframework\orm\RecordInterface;
 
 /**
  * Generic class for user registration and authorization via Email
@@ -12,7 +14,7 @@ namespace samson\social\email;
  * @copyright 2014 SamsonOS
  * @version 0.0.2
  */
-class Email extends \samson\social\Core
+class Email extends Core
 {
     const RESPONSE_ERROR_FIELD = 'email_error';
     const RESPONSE_STATUS_FIELD = 'email_status';
@@ -66,7 +68,7 @@ class Email extends \samson\social\Core
     }
 
     /** User authorization handler */
-    public function authorize(\samson\activerecord\dbRecord & $user, $remember = false)
+    public function authorize(RecordInterface &$user, $remember = false)
     {
         // Call default authorize behaviour
         if (parent::authorize($user, $remember)) {
@@ -87,9 +89,9 @@ class Email extends \samson\social\Core
 
     /**
      * Update authorization status of all social services
-     * @param \samson\activerecord\dbRecord $user Pointer to authorized user database record
+     * @param RecordInterface $user Pointer to authorized user database record
      */
-    public function update(\samson\activerecord\dbRecord & $user)
+    public function update(RecordInterface &$user)
     {
         parent::update($user);
     }
@@ -178,7 +180,7 @@ class Email extends \samson\social\Core
 
         // Check if this email is not already registered
         if (!dbQuery($this->dbTable)->cond($this->dbEmailField, $email)->first($user)) {
-            /**@var $user \samson\activerecord\dbRecord */
+            /**@var $user RecordInterface */
 
             // If user object is NOT passed
             if (!isset($user)) {
