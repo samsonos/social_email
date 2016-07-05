@@ -6,6 +6,7 @@
 namespace samson\social\email;
 
 use samson\social\Core;
+use samsoncms\api\generated\Client;
 use samsonframework\orm\RecordInterface;
 
 /**
@@ -105,8 +106,10 @@ class Email extends Core
 
         // Check if this email is registered
         if (dbQuery($this->dbTable)->where($this->dbHashEmailField, $hashedEmail)->first($user)) {
+            $dbTable = $this->dbTable;
+            $hashPasswordField = $dbTable::$fieldIDs[$this->dbHashPasswordField];
             // Check if passwords match
-            if ($user[$this->dbHashPasswordField] === $hashedPassword) {
+            if ($user[$hashPasswordField] === $hashedPassword) {
                 $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
 
                 // Login with current user
