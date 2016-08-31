@@ -62,9 +62,9 @@ class Email extends Core
     public function prepare()
     {
         // Create and check general database table fields configuration
-        db()->createField($this, $this->dbTable, 'dbConfirmField', 'VARCHAR('.$this->hashLength.')');
-        db()->createField($this, $this->dbTable, 'dbHashEmailField', 'VARCHAR('.$this->hashLength.')');
-        db()->createField($this, $this->dbTable, 'dbHashPasswordField', 'VARCHAR('.$this->hashLength.')');
+        //db()->createField($this, $this->dbTable, 'dbConfirmField', 'VARCHAR('.$this->hashLength.')');
+        //db()->createField($this, $this->dbTable, 'dbHashEmailField', 'VARCHAR('.$this->hashLength.')');
+        //db()->createField($this, $this->dbTable, 'dbHashPasswordField', 'VARCHAR('.$this->hashLength.')');
 
         return parent::prepare();
     }
