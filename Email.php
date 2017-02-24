@@ -7,6 +7,7 @@ namespace samson\social\email;
 
 use samson\social\Core;
 use samsoncms\api\generated\Client;
+use samsoncms\api\generated\ClientQuery;
 use samsonframework\orm\RecordInterface;
 
 /**
@@ -107,6 +108,7 @@ class Email extends Core
         // Check if this email is registered
         if (dbQuery($this->dbTable)->where($this->dbHashEmailField, $hashedEmail)->first($user)) {
             $dbTable = $this->dbTable;
+
             $hashPasswordField = $dbTable::$fieldIDs[$this->dbHashPasswordField];
             // Check if passwords match
             if ($user[$hashPasswordField] === $hashedPassword) {
@@ -142,6 +144,7 @@ class Email extends Core
     {
         $result = '';
         $user = null;
+
         if (!isset($_COOKIE['_cookie_accessToken'])) {
             $result = false;
         } else {
@@ -156,6 +159,7 @@ class Email extends Core
             }
 
         }
+
         return $result;
     }
 
@@ -184,13 +188,20 @@ class Email extends Core
                 $user = new $this->dbTable(false);
             }
 
-            $user[$this->dbEmailField]          = $email;
-            $user[$this->dbHashEmailField]      = $this->hash($email);
+            $user[$this->dbEmailField] = $email;
+            $user[$this->dbHashEmailField] = $this->hash($email);
+
+
+            $user['name'] = $email;
+            $user['md5_email'] = $this->hash($email);
+            $user['md5Email'] = $this->hash($email);
 
             // If password is passed
             if (isset($hashedPassword)) {
                 $user[$this->dbHashPasswordField] = $hashedPassword;
+                $user['md5Pass'] = $hashedPassword;
             } else { // Generate random password
+                $user['md5Pass'] = $this->generatePassword();
                 $user[$this->dbHashPasswordField] = $this->generatePassword();
             }
 
@@ -200,6 +211,9 @@ class Email extends Core
             } else { // Email is already confirmed
                 $user[$this->dbConfirmField] = 1;
             }
+
+            $user['active'] = 1;
+            $user['created'] = date('Y-m-d H:i:s');
 
             // Save object to database
             $user->save();
