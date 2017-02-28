@@ -109,7 +109,7 @@ class Email extends Core
         if (dbQuery($this->dbTable)->where($this->dbHashEmailField, $hashedEmail)->first($user)) {
             $dbTable = $this->dbTable;
 
-            $hashPasswordField = $dbTable::$fieldIDs[$this->dbHashPasswordField];
+            $hashPasswordField = $dbTable::$_attributes[$this->dbHashPasswordField];
             // Check if passwords match
             if ($user[$hashPasswordField] === $hashedPassword) {
                 $result = new EmailStatus(EmailStatus::SUCCESS_EMAIL_AUTHORIZE);
@@ -191,17 +191,10 @@ class Email extends Core
             $user[$this->dbEmailField] = $email;
             $user[$this->dbHashEmailField] = $this->hash($email);
 
-
-            $user['name'] = $email;
-            $user['md5_email'] = $this->hash($email);
-            $user['md5Email'] = $this->hash($email);
-
             // If password is passed
             if (isset($hashedPassword)) {
                 $user[$this->dbHashPasswordField] = $hashedPassword;
-                $user['md5Pass'] = $hashedPassword;
             } else { // Generate random password
-                $user['md5Pass'] = $this->generatePassword();
                 $user[$this->dbHashPasswordField] = $this->generatePassword();
             }
 
@@ -212,8 +205,10 @@ class Email extends Core
                 $user[$this->dbConfirmField] = 1;
             }
 
-            $user['active'] = 1;
-            $user['created'] = date('Y-m-d H:i:s');
+            $activeField = $this->dbActiveField;
+            $createdField = $this->dbCreatedField;
+            $user->$activeField = 1;
+            $user->$createdField = date('Y-m-d H:i:s');
 
             // Save object to database
             $user->save();
