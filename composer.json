@@ -1,7 +1,6 @@
 {
 	"name":"samsonos/social_email",
 	"author":"Vitaly Iegorov <egorov@samsonos.com>",
-	"version":"0.0.1",
 	"require":{
         "samsonos/social_core":"*"
     },
